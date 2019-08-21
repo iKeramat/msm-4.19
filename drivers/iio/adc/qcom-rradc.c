@@ -192,6 +192,10 @@
 #define FG_RR_TP_REV_VERSION2		29
 #define FG_RR_TP_REV_VERSION3		32
 
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+int rradc_die = 0;
+#endif
+
 /*
  * The channel number is not a physical index in hardware,
  * rather it's a list of supported channels and an index to
@@ -229,12 +233,14 @@ struct rradc_chip {
 	struct pmic_revid_data		*pmic_fab_id;
 	int volt;
 	struct power_supply		*usb_trig;
+#ifdef CONFIG_MACH_XIAOMI_TULIP
 	struct power_supply		*batt_psy;
 	struct power_supply		*bms_psy;
 	struct notifier_block		nb;
 	bool				conv_cbk;
 	bool				rradc_fg_reset_wa;
 	struct work_struct	psy_notify_work;
+ #endif
 };
 
 struct rradc_channels {
@@ -679,6 +685,7 @@ static const struct rradc_channels rradc_chans[] = {
 			FG_ADC_RR_AUX_THERM_STS)
 };
 
+#ifdef CONFIG_MACH_XIAOMI_TULIP
 static bool rradc_is_batt_psy_available(struct rradc_chip *chip)
 {
 	if (!chip->batt_psy)
@@ -700,6 +707,7 @@ static bool rradc_is_bms_psy_available(struct rradc_chip *chip)
 
 	return true;
 }
+#endif
 
 static int rradc_enable_continuous_mode(struct rradc_chip *chip)
 {
@@ -770,7 +778,9 @@ static int rradc_check_status_ready_with_retry(struct rradc_chip *chip,
 		struct rradc_chan_prop *prop, u8 *buf, u16 status)
 {
 	int rc = 0, retry_cnt = 0, mask = 0;
+#ifdef CONFIG_MACH_XIAOMI_TULIP
 	union power_supply_propval pval = {0, };
+#endif
 
 	switch (prop->channel) {
 	case RR_ADC_BATT_ID:
@@ -809,6 +819,8 @@ static int rradc_check_status_ready_with_retry(struct rradc_chip *chip,
 		}
 	}
 
+
+#ifdef CONFIG_MACH_XIAOMI_TULIP
 	if ((retry_cnt >= FG_RR_CONV_MAX_RETRY_CNT) &&
 		((prop->channel != RR_ADC_DCIN_V) ||
 		(prop->channel != RR_ADC_DCIN_I)) &&
@@ -830,6 +842,7 @@ static int rradc_check_status_ready_with_retry(struct rradc_chip *chip,
 		if (retry_cnt >= FG_RR_CONV_MAX_RETRY_CNT)
 			rc = -ENODATA;
 	}
+#endif
 
 	return rc;
 }
@@ -1141,6 +1154,7 @@ static int rradc_read_raw(struct iio_dev *indio_dev,
 	return rc;
 }
 
+#ifdef CONFIG_MACH_XIAOMI_TULIP
 static void psy_notify_work(struct work_struct *work)
 {
 	struct rradc_chip *chip = container_of(work,
@@ -1201,6 +1215,7 @@ static int rradc_psy_notifier_cb(struct notifier_block *nb,
 
 	return NOTIFY_OK;
 }
+#endif
 
 static const struct iio_info rradc_info = {
 	.read_raw	= &rradc_read_raw,
@@ -1314,6 +1329,7 @@ static int rradc_probe(struct platform_device *pdev)
 	indio_dev->channels = chip->iio_chans;
 	indio_dev->num_channels = chip->nchannels;
 
+#ifdef CONFIG_MACH_XIAOMI_TULIP
 	chip->usb_trig = power_supply_get_by_name("usb");
 	if (!chip->usb_trig)
 		pr_debug("Error obtaining usb power supply\n");
@@ -1326,7 +1342,8 @@ static int rradc_probe(struct platform_device *pdev)
 
 		INIT_WORK(&chip->psy_notify_work, psy_notify_work);
 	}
-
+ #endif
+ 
 	return devm_iio_device_register(dev, indio_dev);
 }
 
