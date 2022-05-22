@@ -722,8 +722,7 @@ static int dcc_config_add(struct dcc_drvdata *drvdata, unsigned int addr,
 
 	mutex_lock(&drvdata->mutex);
 
-	/* Check the len to avoid allocate huge memory */
-	if (!len || len > (drvdata->ram_size / 8)) {
+	if (!len) {
 		dev_err(drvdata->dev, "DCC: Invalid length!\n");
 		ret = -EINVAL;
 		goto err;
