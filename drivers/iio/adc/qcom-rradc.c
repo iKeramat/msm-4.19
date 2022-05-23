@@ -233,11 +233,11 @@ struct rradc_chip {
 	struct pmic_revid_data		*pmic_fab_id;
 	int volt;
 	struct power_supply		*usb_trig;
+	bool				conv_cbk;
 #ifdef CONFIG_MACH_XIAOMI_TULIP
 	struct power_supply		*batt_psy;
 	struct power_supply		*bms_psy;
 	struct notifier_block		nb;
-	bool				conv_cbk;
 	bool				rradc_fg_reset_wa;
 	struct work_struct	psy_notify_work;
  #endif
@@ -1269,8 +1269,10 @@ static int rradc_get_dt_data(struct rradc_chip *chip, struct device_node *node)
 		}
 	}
 
+#ifdef CONFIG_MACH_XIAOMI_TULIP
 	chip->rradc_fg_reset_wa =
 		of_property_read_bool(node, "qcom,rradc-fg-reset-wa");
+#endif
 
 	iio_chan = chip->iio_chans;
 
@@ -1343,7 +1345,7 @@ static int rradc_probe(struct platform_device *pdev)
 		INIT_WORK(&chip->psy_notify_work, psy_notify_work);
 	}
  #endif
- 
+
 	return devm_iio_device_register(dev, indio_dev);
 }
 
